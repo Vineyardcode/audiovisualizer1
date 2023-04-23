@@ -7,6 +7,7 @@ import * as THREE from 'three';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0.3, 0.7, 2.0);
+
 ////////////////////////
 // camera
 ////////////////////////
@@ -28,16 +29,14 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 ////////////////////////
-// shapes
+// geometry, materials, textures
 ////////////////////////
 
-const geometry = new THREE.TorusGeometry( 2, 1, 4, 3 );
 
 
 const textureLoader = new THREE.TextureLoader();
-
-// Load a texture image from a URL
 const texture = textureLoader.load('src/textures/pexels-anni-roenkae-2832432.jpg');
+
 const material = new THREE.MeshPhongMaterial({
   color: 0x3f7b9d,
   specular: 0x050505,
@@ -48,7 +47,7 @@ const material = new THREE.MeshPhongMaterial({
   reflectivity: 0.8
 });
 
-
+const geometry = new THREE.TorusGeometry( 2, 1, 4, 3 );
 const torus = new THREE.Mesh( geometry, material );
 scene.add( torus );
 
@@ -64,12 +63,27 @@ scene.add(light);
 // audio
 ////////////////////////
 
+let isAudioContextStarted = false;
+
+function startAudioContext() {
+  if (!isAudioContextStarted) {
+    isAudioContextStarted = true;
+    audioContext.resume().then(() => {
+      console.log('AudioContext started');
+    });
+  }
+}
+
+document.addEventListener('click', startAudioContext);
+document.addEventListener('touchstart', startAudioContext);
+
 const audioContext = new AudioContext();
 navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
+
   .then(stream => {
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
+    analyser.fftSize = 1024;
     source.connect(analyser);
 
     ////////////////////////
@@ -87,16 +101,16 @@ navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
         const sample = timeDomainData[i] / 128 - 1;
         amplitude += sample * sample;
       }
-      amplitude = Math.sqrt(amplitude / timeDomainData.length);
+      amplitude = Math.sqrt(amplitude / timeDomainData.length)*10;
 
       
-      torus.scale.set(amplitude + 3, amplitude + 3, amplitude + 3);
-
+      torus.rotateX(amplitude * 0.01);
+      torus.rotateY(amplitude * 0.05);
+      console.log(amplitude);
       renderer.render(scene, camera);
     }
 
     animate();
-
 
   });
 
