@@ -1,62 +1,41 @@
 import './style.css'
 import * as THREE from 'three';
+import { createNoise2D, createNoise3D } from 'simplex-noise';
 
 ////////////////////////
 // scene
 ////////////////////////
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0.3, 0.7, 2.0);
-
-////////////////////////
-// camera
-////////////////////////
-
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-camera.position.z = 10;
-
-////////////////////////
-// renderer
-////////////////////////
-
+const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+camera.position.set(1, 5, 17);
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
 
 ////////////////////////
 // geometry, materials, textures
 ////////////////////////
 
+const terrainSize = 15;
+const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSize - 1, terrainSize - 1);
+terrainGeometry.rotateX( - Math.PI / 2 );
+
+// Generate random heights for the terrain
 
 
-const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load('src/textures/pexels-anni-roenkae-2832432.jpg');
+// Create a material for the terrain
+const terrainMaterial = new THREE.MeshStandardMaterial({color: 0x808080, flatShading: true});
 
-const material = new THREE.MeshPhongMaterial({
-  color: 0x3f7b9d,
-  specular: 0x050505,
-  shininess: 100,
-  map: texture,
-  bumpMap: texture,
-  bumpScale: 0.1,
-  reflectivity: 0.8
-});
-
-const geometry = new THREE.TorusGeometry( 2, 1, 4, 3 );
-const torus = new THREE.Mesh( geometry, material );
-scene.add( torus );
+const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
+scene.add(terrainMesh);
 
 ////////////////////////
 // light
 ////////////////////////
 
-const light = new THREE.PointLight(0xffffff, 1);
-light.position.set(1, 5, 10);
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(0, 1, 1).normalize();
 scene.add(light);
 
 ////////////////////////
@@ -83,7 +62,7 @@ navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
   .then(stream => {
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 1024;
+    analyser.fftSize = 64;
     source.connect(analyser);
 
     ////////////////////////
@@ -91,26 +70,29 @@ navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
     ////////////////////////
 
     function animate() {
-      requestAnimationFrame(animate);
-      const timeDomainData = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteTimeDomainData(timeDomainData);
+      // const timeDomainData = new Uint8Array(analyser.frequencyBinCount);
+      // analyser.getByteTimeDomainData(timeDomainData);
 
-      // Calculate the amplitude of the signal from the time-domain data
-      let amplitude = 0;
-      for (let i = 0; i < timeDomainData.length; i++) {
-        const sample = timeDomainData[i] / 128 - 1;
-        amplitude += sample * sample;
+      // let amplitude = 0;
+      // for (let i = 0; i < timeDomainData.length; i++) {
+      //   const sample = timeDomainData[i] / 128 - 1;
+      //   amplitude += sample * sample;
+      // }
+      // amplitude = Math.sqrt(amplitude / timeDomainData.length);
+      const position = terrainGeometry.attributes.position;
+      for (let i = 0; i < position.count; i+=2) {
+          position.setY(i, 2); // generate heights between -1.5 and 1.5
       }
-      amplitude = Math.sqrt(amplitude / timeDomainData.length)*10;
 
-      
-      torus.rotateX(amplitude * 0.01);
-      torus.rotateY(amplitude * 0.05);
-      console.log(amplitude);
+      position.needsUpdate = true;
+        requestAnimationFrame(animate);
+     
       renderer.render(scene, camera);
+
+
     }
 
-    animate();
+    setInterval(animate, 1000/10);
 
   });
 
