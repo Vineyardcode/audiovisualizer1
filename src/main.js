@@ -8,7 +8,8 @@ import { createNoise2D, createNoise3D } from 'simplex-noise';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-camera.position.set(1, 5, 17);
+camera.position.set(5, 50, 50);
+
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
@@ -17,16 +18,35 @@ document.body.appendChild( renderer.domElement );
 // geometry, materials, textures
 ////////////////////////
 
-const terrainSize = 15;
-const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSize - 1, terrainSize - 1);
-terrainGeometry.rotateX( - Math.PI / 2 );
+let cols, rows;
+const scl = 20;
+const w = 1320;
+const h = 1320;
+let flying = 0;
 
-// Generate random heights for the terrain
+cols = w / scl;
+rows = h / scl;
+
+const terrainGeometry = new THREE.PlaneGeometry(w, h, cols - 1, rows - 1);
+const terrain = new Array(cols).fill(null).map(() => new Array(rows).fill(0));
 
 
-// Create a material for the terrain
-const terrainMaterial = new THREE.MeshStandardMaterial({color: 0x808080, flatShading: true});
+const simplex = createNoise2D();
+let yoff = 0;
+for (let y = 0; y < rows; y++) {
+  let xoff = 0;
+  for (let x = 0; x < cols; x++) {
+    const index = x + y * cols;
+    const noiseVal = simplex(xoff, yoff);
+    const height = THREE.MathUtils.mapLinear(noiseVal, 0, 1, -100, 100);
+    terrain[x][y] = height;
+    terrainGeometry.attributes.position.setZ(index, height);
+    xoff += 0.2;
+  }
+  yoff += 0.2;
+}
 
+const terrainMaterial = new THREE.MeshStandardMaterial({color: 0x808080, wireframe: true});
 const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
 scene.add(terrainMesh);
 
@@ -39,77 +59,35 @@ light.position.set(0, 1, 1).normalize();
 scene.add(light);
 
 ////////////////////////
-// audio
+// animate
 ////////////////////////
 
-let isAudioContextStarted = false;
+function animate() {
+  requestAnimationFrame( animate );
 
-function startAudioContext() {
-  if (!isAudioContextStarted) {
-    isAudioContextStarted = true;
-    audioContext.resume().then(() => {
-      console.log('AudioContext started');
-    });
-  }
-}
-
-document.addEventListener('click', startAudioContext);
-document.addEventListener('touchstart', startAudioContext);
-
-const audioContext = new AudioContext();
-navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
-
-  .then(stream => {
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 64;
-    source.connect(analyser);
-
-    ////////////////////////
-    // animate
-    ////////////////////////
-
-    function animate() {
-      // const timeDomainData = new Uint8Array(analyser.frequencyBinCount);
-      // analyser.getByteTimeDomainData(timeDomainData);
-
-      // let amplitude = 0;
-      // for (let i = 0; i < timeDomainData.length; i++) {
-      //   const sample = timeDomainData[i] / 128 - 1;
-      //   amplitude += sample * sample;
-      // }
-      // amplitude = Math.sqrt(amplitude / timeDomainData.length);
-      const position = terrainGeometry.attributes.position;
-      for (let i = 0; i < position.count; i+=2) {
-          position.setY(i, 2); // generate heights between -1.5 and 1.5
-      }
-
-      position.needsUpdate = true;
-        requestAnimationFrame(animate);
-     
-      renderer.render(scene, camera);
-
-
+  // Update terrain
+  flying -= 0.05;
+  yoff = flying;
+  for (let y = 0; y < rows; y++) {
+    let xoff = 0;
+    for (let x = 0; x < cols; x++) {
+      const noiseVal = simplex(xoff, yoff);
+      const height = THREE.MathUtils.mapLinear(noiseVal, 0, 1, -5, 5);
+      terrain[x][y] = height;
+      terrainGeometry.attributes.position.setZ((x + y * cols), height);
+      xoff += 0.2;
     }
+    yoff += 0.2;
+  }
+  terrainGeometry.attributes.position.needsUpdate = true;
 
-    setInterval(animate, 1000/10);
+  // Rotate camera
+  camera.rotation.x = Math.PI / 3;
 
-  });
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
+  // Render scene
+  renderer.render( scene, camera );
+}
+animate();
 
 
 
