@@ -66,7 +66,7 @@ function animate() {
   requestAnimationFrame( animate );
 
   // Update terrain
-  flying -= 0.05;
+  flying -= 0.02;
   yoff = flying;
   for (let y = 0; y < rows; y++) {
     let xoff = 0;
