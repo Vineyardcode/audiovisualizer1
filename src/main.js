@@ -1,4 +1,4 @@
-import './style.css'
+// import './style.css'
 import * as THREE from 'three';
 import { createNoise2D, createNoise3D } from 'simplex-noise';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
@@ -11,23 +11,20 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-camera.position.set( 0, -700, 333 );
+camera.position.set( 0, -600, 200 );
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild( renderer.domElement );
 
 const controls = new OrbitControls(camera, renderer.domElement);
-
 
 ////////////////////////
 // geometry, materials, textures
 ////////////////////////
 
 let cols, rows;
-const scl = 20;
+const scl = 10;
 const w = 1000;
 const h = 1000;
 let flying = 0;
@@ -54,18 +51,17 @@ for (let y = 0; y < rows; y++) {
   yoff += 0.2;
 }
 
-terrainGeometry.computeVertexNormals();
 
-const terrainMaterial = new THREE.MeshStandardMaterial({
-  color: 0x808080,
-  wireframe: false,
+
+const terrainMaterial = new THREE.MeshLambertMaterial({
+  color: 0x805080,
+  reflectivity: 1,
+  flatShading: true,
 });
 
 const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
-terrainMesh.receiveShadow = true;
-terrainMesh.castShadow = true;
-scene.add(terrainMesh);
 
+scene.add(terrainMesh);
 
 ////////////////////////
 // light
@@ -171,38 +167,79 @@ function animate() {
     yoff += 0.2;
   }
 
-  for (let y = startY0; y < startY0 + 5; y++) {
-    let xoff = 0;
-    for (let x = startX0; x < startX0 + 5; x++) {
-      const noiseVal = simplex(xoff, yoff);
-      let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
-
-      terrain[x][y] = height;
-      terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/20);
-      xoff += 0.2
+  if (averageFrequency !== 0) {
+    
+    for (let y = startY0; y < startY0 + 5; y++) {
+      let xoff = 0;
+      for (let x = startX0; x < startX0 + 5; x++) {
+        const noiseVal = simplex(xoff, yoff);
+        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
+  
+        terrain[x][y] = height;
+        terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/20);
+        xoff += 0.2
+      }
+      yoff += 0.2;
     }
-    yoff += 0.2;
+  
+    for (let y = startY1; y < startY1 + 5; y++) {
+      let xoff = 0;
+      for (let x = startX1; x < startX1 + 5; x++) {
+        const noiseVal = simplex(xoff, yoff);
+        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
+  
+        terrain[x][y] = height;
+        terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/20);
+        xoff += 0.2
+      }
+      yoff += 0.2;
+    }
+
   }
 
-  for (let y = startY1; y < startY1 + 5; y++) {
-    let xoff = 0;
-    for (let x = startX1; x < startX1 + 5; x++) {
-      const noiseVal = simplex(xoff, yoff);
-      let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
+console.log(camera.position);
 
-      terrain[x][y] = height;
-      terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/20);
-      xoff += 0.2
-    }
-    yoff += 0.2;
-  }
+  // light.position.set( Math.sin(Date.now() * 0.001) * 1000, 1, Math.cos(Date.now() * 0.001) * 1000 );
+
+  // const lightDirection = new THREE.Vector3();
+  // light.getWorldDirection(lightDirection);
+
+  // const vertices = terrainGeometry.attributes.position.array;
+  // const normals = terrainGeometry.attributes.normal.array;
+
+  // for (let i = 0; i < vertices.length; i += 3) {
+  //   const vertex = new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]);
+  //   const normal = new THREE.Vector3(normals[i], normals[i + 1], normals[i + 2]);
+  //   const intensity = normal.dot(lightDirection);
+  //   const color = new THREE.Color().setHSL(0.1, 1, 0.75 + intensity * 0.25);
+  //   terrainMaterial.vertexColors = true;
+  //   terrainGeometry.setAttribute('color', new THREE.BufferAttribute(color, 3));
+  //   terrainGeometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
+  // }
+
+  
+
+  // terrainGeometry.attributes.normal.needsUpdate = true;
+  // terrainGeometry.attributes.color.needsUpdate = true;
+
+
+
+
+  terrainGeometry.computeVertexNormals();
+
+
+
+
+
 
   terrainGeometry.attributes.position.needsUpdate = true;
+
 
   requestAnimationFrame( animate );
   renderer.render( scene, camera );
   controls.update();
-  console.log(camera.position);
+
+
 }
 
 animate();
