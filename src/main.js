@@ -51,17 +51,71 @@ for (let y = 0; y < rows; y++) {
   yoff += 0.2;
 }
 
-
-
-const terrainMaterial = new THREE.MeshLambertMaterial({
-  color: 0x805080,
-  reflectivity: 1,
-  flatShading: true,
+const terrainMaterial = new THREE.MeshNormalMaterial({
+  wireframe: true,
+  side: THREE.DoubleSide,
 });
 
-const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
+const terrainMeshish = new THREE.Mesh(terrainGeometry, terrainMaterial);
 
-scene.add(terrainMesh);
+const terrainMeshes = [];
+
+for (let i = 0; i < 6; i++) {
+  const terrainMesh = terrainMeshish.clone();
+  terrainMeshes.push(terrainMesh);
+}
+
+// Set the positions and rotations of the cloned meshes to form a cube
+terrainMeshes[0].position.set(w, 0, 0);
+terrainMeshes[0].rotation.set(0, Math.PI / 2, 0);
+
+terrainMeshes[1].position.set(-w, 0, 0);
+terrainMeshes[1].rotation.set(0, -Math.PI / 2, 0);
+
+terrainMeshes[2].position.set(0, w, 0);
+terrainMeshes[2].rotation.set(-Math.PI / 2, 0, 0);
+
+terrainMeshes[3].position.set(0, -w, 0);
+terrainMeshes[3].rotation.set(Math.PI / 2, 0, 0);
+
+terrainMeshes[4].position.set(0, 0, w);
+terrainMeshes[4].rotation.set(0, 0, 0);
+
+terrainMeshes[5].position.set(0, 0, -w);
+terrainMeshes[5].rotation.set(0, Math.PI, 0);
+
+// Add the cloned meshes to the scene
+for (const terrainMesh of terrainMeshes) {
+  scene.add(terrainMesh);
+}
+
+
+for (let i = -1; i <= 1; i++) {
+  for (let j = -1; j <= 1; j++) {
+    for (let k = -1; k <= 1; k++) {
+      const cubeGeometry = new THREE.BoxGeometry(65, 65, 65);
+      const cubeMaterial = new THREE.MeshNormalMaterial();
+      const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+      cube.position.set(i * 250, j * 250, k * 250);
+      scene.add(cube);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ////////////////////////
 // light
@@ -125,7 +179,6 @@ navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
     setInterval(updateTerrain, 1000);
 
 function animate() {
-
 
   let dataArray = new Uint8Array(bufferLength);
 
@@ -197,7 +250,7 @@ function animate() {
 
   }
 
-console.log(camera.position);
+
 
   // light.position.set( Math.sin(Date.now() * 0.001) * 1000, 1, Math.cos(Date.now() * 0.001) * 1000 );
 
@@ -217,28 +270,16 @@ console.log(camera.position);
   //   terrainGeometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
   // }
 
-  
-
   // terrainGeometry.attributes.normal.needsUpdate = true;
   // terrainGeometry.attributes.color.needsUpdate = true;
 
-
-
-
   terrainGeometry.computeVertexNormals();
 
-
-
-
-
-
   terrainGeometry.attributes.position.needsUpdate = true;
-
 
   requestAnimationFrame( animate );
   renderer.render( scene, camera );
   controls.update();
-
 
 }
 
