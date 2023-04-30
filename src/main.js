@@ -11,7 +11,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-camera.position.set( 0, -600, 200 );
+camera.position.set( 0, -5000, 700 );
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -90,18 +90,19 @@ for (const terrainMesh of terrainMeshes) {
 }
 
 
+const cubes = [];
 for (let i = -1; i <= 1; i++) {
   for (let j = -1; j <= 1; j++) {
     for (let k = -1; k <= 1; k++) {
-      const cubeGeometry = new THREE.BoxGeometry(65, 65, 65);
+      const cubeGeometry = new THREE.BoxGeometry(50, 50, 50);
       const cubeMaterial = new THREE.MeshNormalMaterial();
       const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
       cube.position.set(i * 250, j * 250, k * 250);
       scene.add(cube);
+      cubes.push(cube);
     }
   }
 }
-
 
 
 
@@ -178,6 +179,8 @@ navigator.mediaDevices.getUserMedia({audio: {deviceId: 'VBAudioVACWDM'}})
     setInterval(updateTerrain1, 1000);
     setInterval(updateTerrain, 1000);
 
+    const cubePositions = cubes.map(cube => cube.position.clone());
+
 function animate() {
 
   let dataArray = new Uint8Array(bufferLength);
@@ -220,62 +223,60 @@ function animate() {
     yoff += 0.2;
   }
 
-  if (averageFrequency !== 0) {
-    
-    for (let y = startY0; y < startY0 + 5; y++) {
+  if (averageFrequency > 0) {
+    for (let y = startY0; y < startY0 + 10; y++) {
       let xoff = 0;
-      for (let x = startX0; x < startX0 + 5; x++) {
+      for (let x = startX0; x < startX0 + 10; x++) {
         const noiseVal = simplex(xoff, yoff);
-        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
+        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 31, 70);
   
-        terrain[x][y] = height;
-        terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/20);
+        if (terrain[x] !== undefined && terrain[x][y] !== undefined) {
+          terrain[x][y] = height;
+          terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/13);
+        }
+  
         xoff += 0.2
       }
       yoff += 0.2;
     }
   
-    for (let y = startY1; y < startY1 + 5; y++) {
+    for (let y = startY1; y < startY1 + 13; y++) {
       let xoff = 0;
-      for (let x = startX1; x < startX1 + 5; x++) {
+      for (let x = startX1; x < startX1 + 13; x++) {
         const noiseVal = simplex(xoff, yoff);
         let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
   
-        terrain[x][y] = height;
-        terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/20);
+        if (terrain[x] !== undefined && terrain[x][y] !== undefined) {
+          terrain[x][y] = height;
+          terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/13);
+        }
+  
         xoff += 0.2
       }
       yoff += 0.2;
     }
-
   }
-
-
-
-  // light.position.set( Math.sin(Date.now() * 0.001) * 1000, 1, Math.cos(Date.now() * 0.001) * 1000 );
-
-  // const lightDirection = new THREE.Vector3();
-  // light.getWorldDirection(lightDirection);
-
-  // const vertices = terrainGeometry.attributes.position.array;
-  // const normals = terrainGeometry.attributes.normal.array;
-
-  // for (let i = 0; i < vertices.length; i += 3) {
-  //   const vertex = new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]);
-  //   const normal = new THREE.Vector3(normals[i], normals[i + 1], normals[i + 2]);
-  //   const intensity = normal.dot(lightDirection);
-  //   const color = new THREE.Color().setHSL(0.1, 1, 0.75 + intensity * 0.25);
-  //   terrainMaterial.vertexColors = true;
-  //   terrainGeometry.setAttribute('color', new THREE.BufferAttribute(color, 3));
-  //   terrainGeometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
-  // }
-
-  // terrainGeometry.attributes.normal.needsUpdate = true;
-  // terrainGeometry.attributes.color.needsUpdate = true;
+  
+  const randomIndex = Math.floor(Math.random() * cubes.length);
+  const randomAxis = Math.floor(Math.random() * 3); // 0 = x, 1 = y, 2 = z
+  
+  if (averageFrequency > 0) {
+    let position = {};
+    position[`xyz`[randomAxis]] = cubePositions[randomIndex][`xyz`[randomAxis]] + averageFrequency + (Math.floor(Math.random() * 601) - 300);
+    gsap.to(cubes[randomIndex].position, {duration: 1, ...position});
+  } else {
+    gsap.to(cubes[randomIndex].position, {duration: 1, ...cubePositions[randomIndex]});
+  }
 
   terrainGeometry.computeVertexNormals();
 
   terrainGeometry.attributes.position.needsUpdate = true;
+
+
+
+  // camera.position.x += 1 ;
+  // camera.position.y += 1 ;
+  // camera.position.z += 1 ;
 
   requestAnimationFrame( animate );
   renderer.render( scene, camera );
