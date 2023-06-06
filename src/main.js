@@ -1,4 +1,4 @@
-// import './style.css'
+import './style.css'
 import * as THREE from 'three';
 import { createNoise2D, createNoise3D } from 'simplex-noise';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
@@ -86,6 +86,7 @@ terrainMeshes[5].rotation.set(0, Math.PI, 0);
 
 // Add the cloned meshes to the scene
 for (const terrainMesh of terrainMeshes) {
+ 
   scene.add(terrainMesh);
 }
 
@@ -212,7 +213,7 @@ function animate() {
     let xoff = 0;
     for (let x = 0; x < cols; x++) {
       const noiseVal = simplex(xoff, yoff);
-      let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
+      let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 15, 70);
 
       terrain[x][y] = height;
       terrainGeometry.attributes.position.setZ((x + y * cols),height);
@@ -224,15 +225,15 @@ function animate() {
   }
 
   if (averageFrequency > 0) {
-    for (let y = startY0; y < startY0 + 10; y++) {
+    for (let y = startY0; y < startY0 + 11; y++) {
       let xoff = 0;
       for (let x = startX0; x < startX0 + 10; x++) {
         const noiseVal = simplex(xoff, yoff);
-        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 31, 70);
+        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 15, 71);
   
         if (terrain[x] !== undefined && terrain[x][y] !== undefined) {
           terrain[x][y] = height;
-          terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/13);
+          terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/9);
         }
   
         xoff += 0.2
@@ -240,15 +241,15 @@ function animate() {
       yoff += 0.2;
     }
   
-    for (let y = startY1; y < startY1 + 13; y++) {
+    for (let y = startY1; y < startY1 + 15; y++) {
       let xoff = 0;
-      for (let x = startX1; x < startX1 + 13; x++) {
+      for (let x = startX1; x < startX1 + 10; x++) {
         const noiseVal = simplex(xoff, yoff);
-        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 35, 70);
+        let height = THREE.MathUtils.mapLinear(noiseVal, 2, 7, 15, 71);
   
         if (terrain[x] !== undefined && terrain[x][y] !== undefined) {
           terrain[x][y] = height;
-          terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/13);
+          terrainGeometry.attributes.position.setZ((x + y * cols), height*averageFrequency/9);
         }
   
         xoff += 0.2
@@ -277,6 +278,7 @@ function animate() {
   // camera.position.x += 1 ;
   // camera.position.y += 1 ;
   // camera.position.z += 1 ;
+
 
   requestAnimationFrame( animate );
   renderer.render( scene, camera );
